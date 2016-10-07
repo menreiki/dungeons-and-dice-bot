@@ -1,0 +1,18 @@
+{
+  "name": "Dungeons & Dice",
+  "version": "1.0.0",
+  "description": "dice bot",
+  "main": "dice.js",
+  "license": "ISC",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dice.js"
+  },
+  "author": {
+    "name": "Tatyana Sandanova"
+  },
+  "dependencies": {
+    "botbuilder": "^3.2.3",
+    "restify": "^4.1.1",    
+  }
+}
