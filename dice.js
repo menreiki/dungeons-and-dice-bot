@@ -67,7 +67,7 @@ bot.dialog('/roll', [
         if (session.userData.diceNumber === 0) {
             session.beginDialog('/start');
         }
-        builder.Prompts.choice(session, "Would you like to roll or change your dice" + session.userData.diceName + "?", ["Roll " + session.userData.diceName + "!", "Change the dice."]);
+        builder.Prompts.choice(session, "Would you like to roll or change your dice " + session.userData.diceName + "?", ["Roll " + session.userData.diceName + "!", "Change the dice."]);
     },
     function (session, results) {
         if (results.response.entity.indexOf("Roll") !== -1) {
