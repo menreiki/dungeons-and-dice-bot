@@ -1,5 +1,5 @@
 {
-  "name": "Dungeons & Dice",
+  "name": "dungeons-and-dice",
   "version": "1.0.0",
   "description": "dice bot",
   "main": "dice.js",
