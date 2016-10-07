@@ -94,10 +94,10 @@ function ParseDice(session, input) {
     var dices = [4, 6, 8, 10, 12, 13, 20, 100];
     session.userData.diceNumber = 0;
     session.userData.diceName = null;
-    var name = input.match(/D\d+/i);
+    var name = input.toUpperCase().match(/D\d+/i);
     var number;
     if (name) {
-        session.userData.diceName = name[0].toUpperCase();
+        session.userData.diceName = name[0];
         number = parseInt(name[0].match(/\d+/i)[0]);
         if (dices.indexOf(number) !== -1) {
             session.userData.diceNumber = number;
