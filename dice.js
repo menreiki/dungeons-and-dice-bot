@@ -30,12 +30,13 @@ bot.dialog('/start', [
     },
     function (session, results) {
         ParseDice(session, results.response);
+        var msg;
         if (session.userData.diceNumber === 13) {
             session.send("#lemmings16 is awesome!");
             session.userData.diceNumber = 0;
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber === 0) {
-            var msg = "Sorry " + GetUserName(session) + ", I don't understand. ";
+            msg = "Sorry " + GetUserName(session) + ", I don't understand. ";
             if (session.userData.diceName) {
                 msg = "Sorry " + GetUserName(session) + ", I can't roll the dice " + session.userData.diceName + ". ";
             }
@@ -43,14 +44,14 @@ bot.dialog('/start', [
             session.replaceDialog('/start', { reprompt: true });
         } else {
             if (session.userData.diceNumber > 0 && !session.userData.diceName) {
-                var msg = "Do you want to roll dice D" + session.userData.diceNumber.toString() + "?";
+                msg = "Do you want to roll dice D" + session.userData.diceNumber.toString() + "?";
                 builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(session, msg) });
             } else {
                 Roll(session, function () {
                     session.beginDialog('/roll');
                 });
             }
-        } 
+        }
     },
     function (session, results) {
         if (results.response) {
@@ -71,15 +72,32 @@ bot.dialog('/roll', [
             session.beginDialog('/start');
         }
         var msg = "Would you like to roll or change your dice " + session.userData.diceName + "?";
-        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName + "!", "Change the dice."], { retryPrompt: GetRetryPrompt(session, msg) });
+        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Change the dice", "I'm good"], { retryPrompt: GetRetryPrompt(session, msg) });
     },
     function (session, results) {
         if (results.response.entity.indexOf("Roll") !== -1) {
             Roll(session, function () {
                 session.replaceDialog('/roll', { reprompt: true });
             });
-        } else {
+        } else if (results.response.entity === "Change the dice") {
             session.beginDialog('/start');
+        } else {
+            session.beginDialog('/finish');
+        }
+    }
+]);
+
+bot.dialog('/finish', [
+    function (session) {
+        var msg = "Is there anything else you'd like to do?";
+        builder.Prompts.choice(session, msg, ["Sure", "I'm good"], { retryPrompt: GetRetryPrompt(session, msg) });
+    },
+    function (session, results) {
+        if (results.response.entity === "Sure") {
+            session.beginDialog('/start');
+        } else {
+            session.send("Thank you for visiting us! See you soon.");
+            session.endConversation();
         }
     }
 ]);
@@ -136,7 +154,7 @@ bot.use({
         var last = session.conversationData.lastSendTime;
         var now = Date.now();
         var diff = moment.duration(now - last).asHours();
-        if (last == undefined || diff > 1) {            
+        if (last == undefined || diff > 1) {
             session.conversationData = {};
             session.beginDialog('/');
         } else {
