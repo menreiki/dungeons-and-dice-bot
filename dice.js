@@ -36,9 +36,10 @@ bot.dialog('/start', [
             session.userData.diceNumber = 0;
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber === 0) {
-            msg = "Sorry " + GetUserName(session) + ", I don't understand. ";
             if (session.userData.diceName) {
-                msg = "Sorry " + GetUserName(session) + ", I can't roll the dice " + session.userData.diceName + ". ";
+                msg = "Sorry " + GetUserName(session) + ", I can't roll the dice " + session.userData.diceName + ".";
+            } else {
+                msg = "Sorry " + GetUserName(session) + ", I don't understand.";
             }
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
@@ -89,35 +90,77 @@ bot.dialog('/roll', [
 ]);
 
 function ValidateDice(userData) {
-    return userData.diceName && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
+    return userData.diceName && userData.diceCount && userData.diceCount > 0 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
 }
 
 function ParseDice(session, input) {
     var dices = [4, 6, 8, 10, 12, 13, 20, 100];
-    session.userData.diceNumber = 0;
-    session.userData.diceName = null;
-    var name = input.toUpperCase().match(/D\d+/i);
-    var number;
-    if (name) {
-        session.userData.diceName = name[0];
-        number = parseInt(name[0].match(/\d+/i)[0]);
+    var count = 1, number = 0, delta = 0, name = null;
+    input = input.toUpperCase();
+    var names = input.match(/D\d+/i);
+    if (names) {
+        name = names[0];
+        number = parseInt(name.match(/\d+/i)[0], 10);
         if (dices.indexOf(number) !== -1) {
-            session.userData.diceNumber = number;
+            names = input.match(/\d+D\d+/i);
+            if (names) {
+                count = parseInt(names[0].match(/\d+/i)[0], 10);
+                if (count === 0) {
+                    number = 0;
+                } else {
+                    name = names[0];
+                }
+            }
+            names = input.match(/D\d+\+\d+/i);
+            if (names) {
+                var deltas = names[0].match(/\d+/g);
+                delta = parseInt(deltas[1], 10);
+                if (delta > 0) {
+                    name = names[0];
+                }
+            }
+            if (count > 1 && delta > 0) {
+                name = input.match(/\d+D\d+\+\d+/i)[0];
+            }
+        } else {
+            number = 0;
         }
     } else {
         var numbers = input.match(/\d+/i);
         if (numbers) {
             number = parseInt(numbers[0]);
-            if (dices.indexOf(number) !== -1) {
-                session.userData.diceNumber = number;
+            if (dices.indexOf(number) === -1) {
+                number = 0;
             }
         }
     }
+    session.userData.diceName = name;
+    session.userData.diceCount = count;
+    session.userData.diceNumber = number;
+    session.userData.diceDelta = delta;
 }
 
 function Roll(session, next) {
-    var n = Random(1, session.userData.diceNumber);
-    session.send(n.toString());
+    if (session.userData.diceCount === 1) {
+        var n = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
+        session.send(n.toString());
+    } else {
+        var names = [];
+        for (var i = 1; i <= session.userData.diceCount; i++) {
+            var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
+            names.push(i + ": " + number.toString());
+        }
+        var attachments = [];
+        names.forEach(function (names) {
+            var card = new builder.ThumbnailCard(session)
+                .title(names);
+            attachments.push(card);
+        });
+        var reply = new builder.Message(session)
+            .attachmentLayout(builder.AttachmentLayout.list)
+            .attachments(attachments);
+        session.send(reply);
+    }
     next();
 }
 
