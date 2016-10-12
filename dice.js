@@ -82,20 +82,6 @@ bot.dialog('/roll', [
         } else if (results.response.entity === "Change the dice") {
             session.beginDialog('/start');
         } else {
-            session.beginDialog('/finish');
-        }
-    }
-]);
-
-bot.dialog('/finish', [
-    function (session) {
-        var msg = "Is there anything else you'd like to do?";
-        builder.Prompts.choice(session, msg, ["Yes", "I'm good"], { retryPrompt: GetRetryPrompt(session, msg) });
-    },
-    function (session, results) {
-        if (results.response.entity === "Yes") {
-            session.beginDialog('/start');
-        } else {
             session.send("Thank you for visiting us! See you soon.");
             session.endConversation();
         }
