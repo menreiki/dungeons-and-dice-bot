@@ -150,7 +150,7 @@ function Roll(session, next) {
             var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
             names.push(i + ": " + number.toString());
         }
-        session.send(names.join("\r\n"));
+        session.send(names.join("\u000A"));
     }
     next();
 }
