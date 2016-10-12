@@ -150,16 +150,7 @@ function Roll(session, next) {
             var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
             names.push(i + ": " + number.toString());
         }
-        var attachments = [];
-        names.forEach(function (names) {
-            var card = new builder.ThumbnailCard(session)
-                .title(names);
-            attachments.push(card);
-        });
-        var reply = new builder.Message(session)
-            .attachmentLayout(builder.AttachmentLayout.list)
-            .attachments(attachments);
-        session.send(reply);
+        session.send(names.join("\r\n"));
     }
     next();
 }
