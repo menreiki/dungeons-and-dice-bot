@@ -14,7 +14,8 @@ var bot = new builder.UniversalBot(connector, { persistConversationData: true })
 server.post('/api/messages', connector.listen());
 
 bot.dialog('/', function (session) {
-    session.send("Hi! I am a Dungeons and Dice bot.");
+    session.send("Hi " + GetUserName(session) + ", I am a Dungeons and Dice bot.");
+    session.conversationData.lastSendTime = session.lastSendTime;
     if (ValidateDice(session.userData)) {
         session.beginDialog('/roll');
     } else {
@@ -24,7 +25,7 @@ bot.dialog('/', function (session) {
 
 bot.dialog('/start', [
     function (session) {
-        builder.Prompts.text(session, "Our Dice Set includes D4, D6, D8, D10, D12, D20 and D100 dices. Which dice should I roll?");
+        builder.Prompts.text(session, "Our Dice Set includes D4, D6, D8, D10, D12, D20 and D100 dices. Which dice should I roll for you?");
     },
     function (session, results) {
         ParseDice(session, results.response);
@@ -33,9 +34,9 @@ bot.dialog('/start', [
             session.userData.diceNumber = 0;
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber === 0) {
-            var msg = "Sorry, I didn't recognise the dice. ";
+            var msg = "Sorry " + GetUserName(session) + ", I don't understand. ";
             if (session.userData.diceName) {
-                msg = "Can't roll dice " + session.userData.diceName + ". ";
+                msg = "Sorry " + GetUserName(session) + ", I can't roll the dice " + session.userData.diceName + ". ";
             }
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
@@ -80,12 +81,6 @@ bot.dialog('/roll', [
     }
 ]);
 
-bot.dialog('/current', [
-    function (session) {
-        builder.Prompts.text(session, "Your current dice is " + session.userData.diceName);
-    }
-]);
-
 function ValidateDice(userData) {
     return userData.diceName && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
 }
@@ -122,3 +117,22 @@ function Roll(session, next) {
 function Random(low, high) {
     return Math.floor(Math.random() * (high - low + 1) + low);
 }
+
+function GetUserName(session) {
+    return session.message.user.name.match(/([^\s]+)/i)[0];
+}
+
+bot.use({
+    botbuilder: (session, next) => {
+        var last = session.conversationData.lastSendTime;
+        var now = Date.now();
+        var diff = moment.duration(now - last).asHours();
+        if (last == undefined || diff > 1) {            
+            session.conversationData = {};
+            session.beginDialog('/');
+        } else {
+            session.conversationData.lastSendTime = session.lastSendTime;
+            next();
+        }
+    }
+});
