@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "botbuilder": "^3.2.3",
-    "restify": "^4.1.1"  
+    "moment": "^2.15.1",
+    "restify": "^4.1.1" 
   }
 }
