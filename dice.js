@@ -266,10 +266,10 @@ function Roll6(session) {
 }
 
 function GenerateCard6(session) {
-    var number = Random(1, 6);
-    var link = "http://www.evalettner.com/images/projects/lemmings/" + Humanize6(number) + ".png";
+    var number = Humanize6(Random(1, 6));
+    var link = "http://www.evalettner.com/images/projects/lemmings/" + number + ".png";
     var card = new builder.ThumbnailCard(session)
-        .title(" ")
+        .title(number)
         .images([builder.CardImage.create(session, link)]);
     return card;
 }
