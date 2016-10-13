@@ -15,7 +15,7 @@ var bot = new builder.UniversalBot(connector, { persistConversationData: true })
 server.post('/api/messages', connector.listen());
 
 bot.dialog('/', function (session) {
-    session.send("Hi " + GetUserName(session.message.user.name) + ", I am a Dungeons and Dice bot ^_^");
+    session.send("Greetings from the darkness, " + GetUserName(session.message.user.name) + "! I will guide you on your journey through dark dungeons ^_^");
     session.conversationData.lastSendTime = session.lastSendTime;
     if (CheckDice(session.userData)) {
         session.beginDialog('/roll');
@@ -26,7 +26,7 @@ bot.dialog('/', function (session) {
 
 bot.dialog('/start', [
     function (session) {
-        builder.Prompts.text(session, "Our dice set includes the following dices: D4, D6, D8, D10, D12, D20 and D100.  \nWhich dice should I roll for you?");
+        builder.Prompts.text(session, "I have the following dices in my dice bag: D4, D6, D8, D10, D12, D20 and D100.  \nWhich one should I roll for you?");
     },
     function (session, results) {
         ParseDice(session.userData, results.response);
@@ -50,18 +50,19 @@ bot.dialog('/roll', [
         if (session.userData.diceNumber === 0) {
             session.beginDialog('/start');
         }
-        var msg = "What would you like to do?";
-        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Change the dice", "I'm good"], { retryPrompt: GetRetryPrompt(session.message.user.name, msg) });
+        var msg = "What is your next action, " + GetUserName(session.message.user.name) + "?";
+        var name = GetUserName(session.message.user.name);
+        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Switch the dice", "Leave a dungeon"], { retryPrompt: GetRetryPrompt(name, msg) });
     },
     function (session, results) {
         if (results.response.entity === "Roll " + session.userData.diceName) {
             Roll(session, function () {
                 session.replaceDialog('/roll', { reprompt: true });
             });
-        } else if (results.response.entity === "Change the dice") {
+        } else if (results.response.entity === "Switch the dice") {
             session.beginDialog('/start');
         } else {
-            session.send("Thank you for visiting us! See you soon <3");
+            session.send("Good luck in your journey, " + GetUserName(session.message.user.name) + "! Fear not, I'm always there for you <3");
             session.endConversation();
         }
     }
@@ -104,11 +105,25 @@ function ParseDice(userData, input) {
             number = 0;
         }
     } else {
-        var numbers = input.match(/\d+/i);
-        if (numbers) {
-            number = parseInt(numbers[0]);
-            if (dices.indexOf(number) === -1) {
-                number = 0;
+        names = input.match(/\d+D/i);
+        var hasCount = false;
+        if (names) {
+            hasCount = true;
+            count = parseInt(names[0].match(/\d+/i)[0], 10);
+        }
+        names = input.match(/D\+\d+/i);
+        var hasDelta = false;
+        if (names) {
+            hasDelta = true;
+            delta = parseInt(names[0].match(/\d+/i)[0], 10);
+        }
+        if (!hasCount && !hasDelta) {
+            var numbers = input.match(/\d+/i);
+            if (numbers) {
+                number = parseInt(numbers[0]);
+                if (dices.indexOf(number) === -1) {
+                    number = 0;
+                }
             }
         }
     }
@@ -133,19 +148,20 @@ function ValidateDice(session) {
             if (session.userData.diceCount > 1 || session.userData.diceDelta > 0) {
                 msg = "It seems you forgot to specify the dice ;p";
             } else if (session.userData.diceName) {
-                msg = session.userData.diceName + "?! Are you sure? ;)";
+                msg = session.userData.diceName + "?! Are absolutely you sure? ;)";
             } else {
-                msg = "Sorry " + GetUserName(session.message.user.name) + ", that's not a dice I know about 8-) Try a different one..";
+                msg = "Forgive me " + GetUserName(session.message.user.name) + ", that's not a dice I know about 8-) Try a different one..";
             }
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceCount === 0) {
-            msg = "You can't roll 0 dice! :P";
+            msg = "You tell me exactly how roll 0 dice! :P";
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber > 0) {
-            msg = "Do you mean dice D" + session.userData.diceNumber.toString() + "? ;)";
-            builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(session.message.user.name, msg) });
+            msg = "By any chance.. do you mean dice D" + session.userData.diceNumber.toString() + "? ;)";
+            var name = GetUserName(session.message.user.name);
+            builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(name, msg) });
             Roll(session, function () {
                 session.beginDialog('/roll');
             });
@@ -195,13 +211,23 @@ function GetQuote() {
         "Time to toss the dice",
         "Slice and Dice, Slice and Dice...",
         "A human, a half orc, and an elf walk into a bar. The dwarf walks under it.",
-        "Rouges do it from behind."
+        "Rouges do it from behind.",
+        "Dice, Camera, Action!"
     ];
     return quotes[Random(0, quotes.length - 1)];
 }
 
 function GetUserName(fullName) {
-    return fullName.match(/([^\s]+)/i)[0]
+    var names = [
+        fullName.match(/([^\s]+)/i)[0],
+        "Traveler",
+        "Dark Lord",
+        "Your Highness",
+        "My Lord",
+        "Dungeon Master",
+        "Master"
+    ];
+    return names[Random(0, names.length - 1)];
 }
 
 function Random(low, high) {
@@ -210,8 +236,11 @@ function Random(low, high) {
 
 function GetRetryPrompt(name, msg) {
     return [
-        "Sorry " + name + ", I didn't get it O:) Please choose one of the following options.  \n\n" + msg,
-        "You are way too fast for me! :) I didn't get that.  \n\n" + msg];
+        "My deepest apologies, " + name + ", I didn't quite get it O:)  \n\n",
+        "No hush and no rush! :)  \n\n",
+        "This sounds like one powerful spell! :) But now is not the right time for it.  \n\n",
+        "Please concentrate, " + name + "!  \n\n"
+    ] + msg;
 }
 
 bot.use({
