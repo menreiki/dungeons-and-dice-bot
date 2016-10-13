@@ -69,6 +69,7 @@ bot.dialog('/roll', [
 ]);
 
 function EasterEgg(session) {
+    session.userData.diceNumber = 0;
     var card = new builder.HeroCard(session)
         .title("Lemmings I/O")
         .subtitle("#lemmings16")
@@ -82,68 +83,98 @@ function EasterEgg(session) {
 }
 
 function CheckDice(userData) {
-    return userData.diceName && userData.diceCount && userData.diceCount > 0 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
+    return userData.diceName &&
+        userData.diceCount && userData.diceCount > 0 &&
+        userData.diceNumber && userData.diceNumber > 0 &&
+        userData.diceNumber !== 13;
 }
 
 function ParseDice(userData, input) {
-    var dices = [4, 6, 8, 10, 12, 13, 20, 100];
-    var count = 1;
-    var number = 0;
-    var delta = 0;
-    var name = null;
     input = input.replace(/\s+/g, '').toUpperCase();
+    userData.diceCount = GetDiceCount(input);
+    userData.diceNumber = GetDiceNumber(input);
+    userData.diceDelta = GetDiceDelta(input);
+    userData.diceName = GetDiceName(input, userData.diceCount, userData.diceNumber, userData.diceDelta);
+}
+
+function GetDiceName(input, count, number, delta) {
+    var dices = [4, 6, 8, 10, 12, 13, 20, 100];
+    var name = null;
     var names = input.match(/D\d+/i);
     if (names) {
-        name = names[0];
-        number = parseInt(name.match(/\d+/i)[0], 10);
-        if (dices.indexOf(number) !== -1) {
-            names = input.match(/\d+D\d+/i);
-            if (names) {
-                count = parseInt(names[0].match(/\d+/i)[0], 10);
-                if (count > 1) {
-                    name = names[0];
-                }
-            }
-            names = input.match(/D\d+\+\d+/i);
-            if (names) {
-                delta = parseInt(names[0].match(/\d+/g)[1], 10);
-                if (delta > 0) {
-                    name = names[0];
-                }
-            }
-            if (count > 1 && delta > 0) {
-                name = input.match(/\d+D\d+\+\d+/i)[0];
-            }
+        number = parseInt(names[0].match(/\d+/i)[0], 10);
+        if (dices.indexOf(number) === -1) {
+            name = names[0];
         } else {
+            name = "D" + number.toString();
+            if (count > 1) {
+                name = count.toString() + name;
+            }
+            if (delta > 0) {
+                name = name + "+" + delta.toString();
+            }
+        }
+    }
+    return name;
+}
+
+function GetDiceNumber(input) {
+    var dices = [4, 6, 8, 10, 12, 13, 20, 100];
+    var number = 0;
+    var name = input.match(/D\d+/i);
+    if (name) {
+        number = parseInt(name[0].match(/\d+/i)[0], 10);
+        if (dices.indexOf(number) === -1) {
             number = 0;
         }
     } else {
-        names = input.match(/\d+D/i);
-        var hasCount = false;
-        if (names) {
-            hasCount = true;
-            count = parseInt(names[0].match(/\d+/i)[0], 10);
+        var numbers = input.match(/\d+/i);
+        if (numbers) {
+            number = parseInt(numbers[0]);
+            if (dices.indexOf(number) === -1) {
+                number = 0;
+            }
         }
-        names = input.match(/D\+\d+/i);
-        var hasDelta = false;
-        if (names) {
-            hasDelta = true;
-            delta = parseInt(names[0].match(/\d+/i)[0], 10);
+    }
+    return number;
+}
+
+function GetDiceCount(input) {
+    var count = 1;
+    var name = input.match(/\d+D\d+/i);
+    if (name) {
+        count = parseInt(name[0].match(/\d+/i)[0], 10);
+    } else {
+        name = input.match(/\d+D/i);
+        if (name) {
+            count = parseInt(name[0].match(/\d+/i)[0], 10);
         }
-        if (!hasCount && !hasDelta) {
-            var numbers = input.match(/\d+/i);
-            if (numbers) {
-                number = parseInt(numbers[0]);
-                if (dices.indexOf(number) === -1) {
-                    number = 0;
+    }
+    return count;
+}
+
+function GetDiceDelta(input) {
+    var delta = 0;
+    var name = input.match(/D\d+\+\d+/i);
+    if (name) {
+        delta = parseInt(name[0].match(/\d+/g)[1], 10);
+    } else {
+        name = input.match(/\d+\+D\d+/i);
+        if (name) {
+            delta = parseInt(name[0].match(/\d+/i)[0], 10);
+        } else {
+            name = input.match(/D\+\d+/i);
+            if (name) {
+                delta = parseInt(name[0].match(/\d+/i)[0], 10);
+            } else {
+                name = input.match(/\d+\+D/i);
+                if (name) {
+                    delta = parseInt(name[0].match(/\d+/i)[0], 10);
                 }
             }
         }
     }
-    userData.diceName = name;
-    userData.diceCount = count;
-    userData.diceNumber = number;
-    userData.diceDelta = delta;
+    return delta;
 }
 
 function ValidateDice(session) {
@@ -155,26 +186,26 @@ function ValidateDice(session) {
     } else {
         if (session.userData.diceNumber === 13) {
             EasterEgg(session);
-            session.userData.diceNumber = 0;
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber === 0) {
-            if (session.userData.diceCount > 1 || session.userData.diceDelta > 0) {
-                msg = "It seems you forgot to specify the dice ;p";
-            } else if (session.userData.diceName) {
+            if (session.userData.diceName) { //d5, 5d5, 5d+5
                 msg = session.userData.diceName + "?! Are absolutely you sure? ;)";
+            } else if (session.userData.diceCount > 1 || session.userData.diceDelta > 0) { //5d+5, 5d, d+5
+                msg = "It seems you forgot to specify the dice ;p";
             } else {
                 msg = "Forgive me " + GetUserName(session.message.user.name) + ", that's not a dice I know about 8-) Try a different one..";
             }
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
-        } else if (session.userData.diceCount === 0) {
-            msg = "You tell me exactly how roll 0 dice! :P";
+        } else if (session.userData.diceCount === 0) {//0d12
+            msg = "Tell me exactly how I can roll 0 dice! :P";
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
-        } else if (session.userData.diceNumber > 0) {
+        } else if (session.userData.diceNumber > 0) { //12
             msg = "By any chance.. do you mean dice D" + session.userData.diceNumber.toString() + "? ;)";
             var name = GetUserName(session.message.user.name);
             builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(name, msg) });
+        } else {
             Roll(session, function () {
                 session.beginDialog('/roll');
             });
@@ -249,11 +280,11 @@ function Random(low, high) {
 
 function GetRetryPrompt(name, msg) {
     return [
-        "My deepest apologies, " + name + ", I didn't quite get it O:)  \n\n",
-        "No hush and no rush! :)  \n\n",
-        "This sounds like one powerful spell! :) But now is not the right time for it.  \n\n",
-        "Please concentrate, " + name + "!  \n\n"
-    ] + msg;
+        "My deepest apologies, " + name + ", I didn't quite get it O:)  \n\n" + msg,
+        "No hush and no rush! :)  \n\n" + msg,
+        "This sounds like one powerful spell! :) But now is not the right time for it.  \n\n" + msg,
+        "Please concentrate, " + name + "!  \n\n" + msg
+    ];
 }
 
 bot.use({
