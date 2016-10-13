@@ -26,7 +26,7 @@ bot.dialog('/', function (session) {
 
 bot.dialog('/start', [
     function (session) {
-        builder.Prompts.text(session, "Our dice set includes the following dices:  \nD4, D6, D8, D10, D12, D20 and D100.  \nWhich dice should I roll for you?");
+        builder.Prompts.text(session, "Our dice set includes the following dices: D4, D6, D8, D10, D12, D20 and D100.  \nWhich dice should I roll for you?");
     },
     function (session, results) {
         ParseDice(session.userData, results.response);
