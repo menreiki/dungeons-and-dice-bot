@@ -54,7 +54,7 @@ bot.dialog('/roll', [
         builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Change the dice", "I'm good"], { retryPrompt: GetRetryPrompt(session, msg) });
     },
     function (session, results) {
-        if (results.response.entity.indexOf("Roll") !== -1) {
+        if (results.response.entity === "Roll " + session.userData.diceName) {
             Roll(session, function () {
                 session.replaceDialog('/roll', { reprompt: true });
             });
@@ -158,14 +158,17 @@ function Roll(session, next) {
         var n = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
         session.send(n.toString());
     } else {
+        var d20 = session.userData.diceNumber === 20 && session.userData.diceDelta === 0;
         var names = [];
         for (var i = 1; i <= session.userData.diceCount; i++) {
             var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
             var name = i + ": " + number.toString();
-            if (number === 1) {
-                name = name + " Critical fail!";
-            } else if (number === session.userData.diceNumber) {
-                name = name + " Critical hit!";
+            if (d20) {
+                if (number === 1) {
+                    name = name + "... you failed!";
+                } else if (number === 20) {
+                    name = name + "! Yay, that's a crit!";
+                }
             }
             names.push(name);
         }
@@ -184,7 +187,7 @@ function GetUserName(session) {
 
 function GetRetryPrompt(session, msg) {
     return [
-        "Sorry " + GetUserName(session) + ", I didn't get it...\n\n" + msg,
+        "Sorry " + GetUserName(session) + ", I didn't get it. Please choose one of the following options.\n\n" + msg,
         "You are way too fast for me! I didn't get that.\n\n" + msg];
 }
 
