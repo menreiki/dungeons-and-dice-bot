@@ -254,9 +254,7 @@ function Roll6(session) {
         attachments.push(card);
     } else {
         for (var i = 1; i <= session.userData.diceCount; i++) {
-            card = GenerateCard6(session);
-            var name = i.toString() + ": " + card.title;
-            card.title(name);
+            card = GenerateCard6(session, i.toString() + ": ");
             attachments.push(card);
         }
     }
@@ -266,11 +264,11 @@ function Roll6(session) {
     session.send(reply);
 }
 
-function GenerateCard6(session) {
+function GenerateCard6(session, prefix) {
     var number = Humanize6(Random(1, 6));
     var link = "http://www.evalettner.com/images/projects/lemmings/" + number + ".png";
     var card = new builder.ThumbnailCard(session)
-        .title(number)
+        .title(prefix + number)
         .images([builder.CardImage.create(session, link)]);
     return card;
 }
