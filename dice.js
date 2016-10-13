@@ -68,7 +68,7 @@ bot.dialog('/roll', [
 ]);
 
 function CheckDice(userData) {
-    return userData.diceName && userData.diceCount && userData.diceCount > 1 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
+    return userData.diceName && userData.diceCount && userData.diceCount > 0 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
 }
 
 function ParseDice(session, input) {
@@ -154,27 +154,32 @@ function ValidateDice(session) {
 }
 
 function Roll(session, next) {
+    var names = [];
     if (session.userData.diceCount === 1) {
-        var n = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
-        session.send(n.toString());
+        var n = GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
+        names.push(n);
     } else {
-        var d20 = session.userData.diceNumber === 20 && session.userData.diceDelta === 0;
-        var names = [GetQuote() + "  \n"];
         for (var i = 1; i <= session.userData.diceCount; i++) {
-            var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
-            var name = i + ": " + number.toString();
-            if (d20) {
-                if (number === 1) {
-                    name = name + "... you failed!";
-                } else if (number === 20) {
-                    name = name + "! Yay, that's a crit!";
-                }
-            }
+            var name = i + ": " + GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
             names.push(name);
         }
-        session.send(names.join("  \n"));
     }
+    var msg = GetQuote() + "  \n\n" + names.join("  \n");
+    session.send(msg);
     next();
+}
+
+function GenerateNumber(max, delta) {
+    var number = Random(1, max) + delta;
+    var name = number.toString();
+    if (max === 20 && delta === 0) {
+        if (number === 1) {
+            name = name + "... you failed!";
+        } else if (number === 20) {
+            name = name + "! Yay, that's a crit!";
+        }
+    }
+    return name;
 }
 
 function GetQuote() {
