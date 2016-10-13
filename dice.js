@@ -195,7 +195,8 @@ function GetQuote() {
         "Life is like the dice that, falling, still show a different face.",
         "Time to toss the dice",
         "Slice and Dice, Slice and Dice...",
-        "A human, a half orc, and an elf walk into a bar. The dwarf walks under it."
+        "A human, a half orc, and an elf walk into a bar. The dwarf walks under it.",
+        "Rouges do it from behind."
     ];
     return quotes[Random(0, quotes.length - 1)];
 }
