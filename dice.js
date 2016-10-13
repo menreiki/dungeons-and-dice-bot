@@ -159,7 +159,7 @@ function Roll(session, next) {
         session.send(n.toString());
     } else {
         var d20 = session.userData.diceNumber === 20 && session.userData.diceDelta === 0;
-        var names = [];
+        var names = [GetQuote() + "  \n"];
         for (var i = 1; i <= session.userData.diceCount; i++) {
             var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
             var name = i + ": " + number.toString();
@@ -175,6 +175,22 @@ function Roll(session, next) {
         session.send(names.join("  \n"));
     }
     next();
+}
+
+function GetQuote() {
+    var quotes = [
+        "What do the dice say..  \\n",
+        "Don't roll the dice if you can't pay the price.",
+        "Dice say nothing. They are dice.",
+        "I will roll the dice and take delight in my suffering.",
+        "God does not play dice.",
+        "The dice of Zeus always fall luckily.",
+        "One who doesn't throw the dice can never expect to score a six.",
+        "Life is like the dice that, falling, still show a different face.",
+        "Time to toss the dice",
+        "Slice and Dice, Slice and Dice..."
+    ];
+    return quotes[Random(0, quotes.length - 1)];
 }
 
 function Random(low, high) {
