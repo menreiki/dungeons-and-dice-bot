@@ -17,7 +17,7 @@ server.post('/api/messages', connector.listen());
 bot.dialog('/', function (session) {
     session.send("Hi " + GetUserName(session) + ", I am a Dungeons and Dice bot.");
     session.conversationData.lastSendTime = session.lastSendTime;
-    if (ValidateDice(session.userData)) {
+    if (CheckDice(session.userData)) {
         session.beginDialog('/roll');
     } else {
         session.beginDialog('/start');
@@ -30,29 +30,7 @@ bot.dialog('/start', [
     },
     function (session, results) {
         ParseDice(session, results.response);
-        var msg;
-        if (session.userData.diceNumber === 13) {
-            session.send("#lemmings16 is awesome!");
-            session.userData.diceNumber = 0;
-            session.replaceDialog('/start', { reprompt: true });
-        } else if (session.userData.diceNumber === 0) {
-            if (session.userData.diceName) {
-                msg = "Sorry " + GetUserName(session) + ", I can't roll the dice " + session.userData.diceName + ".";
-            } else {
-                msg = "Sorry " + GetUserName(session) + ", I don't understand.";
-            }
-            session.send(msg);
-            session.replaceDialog('/start', { reprompt: true });
-        } else {
-            if (session.userData.diceNumber > 0 && !session.userData.diceName) {
-                msg = "Do you want to roll dice D" + session.userData.diceNumber.toString() + "?";
-                builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(session, msg) });
-            } else {
-                Roll(session, function () {
-                    session.beginDialog('/roll');
-                });
-            }
-        }
+        ValidateDice(session);
     },
     function (session, results) {
         if (results.response) {
@@ -89,13 +67,16 @@ bot.dialog('/roll', [
     }
 ]);
 
-function ValidateDice(userData) {
-    return userData.diceName && userData.diceCount && userData.diceCount > 0 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
+function CheckDice(userData) {
+    return userData.diceName && userData.diceCount && userData.diceCount > 1 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
 }
 
 function ParseDice(session, input) {
     var dices = [4, 6, 8, 10, 12, 13, 20, 100];
-    var count = 1, number = 0, delta = 0, name = null;
+    var count = 1;
+    var number = 0;
+    var delta = 0;
+    var name = null;
     input = input.toUpperCase();
     var names = input.match(/D\d+/i);
     if (names) {
@@ -105,16 +86,13 @@ function ParseDice(session, input) {
             names = input.match(/\d+D\d+/i);
             if (names) {
                 count = parseInt(names[0].match(/\d+/i)[0], 10);
-                if (count === 0) {
-                    number = 0;
-                } else {
+                if (count > 1) {
                     name = names[0];
                 }
             }
             names = input.match(/D\d+\+\d+/i);
             if (names) {
-                var deltas = names[0].match(/\d+/g);
-                delta = parseInt(deltas[1], 10);
+                delta = parseInt(names[0].match(/\d+/g)[1], 10);
                 if (delta > 0) {
                     name = names[0];
                 }
@@ -140,6 +118,41 @@ function ParseDice(session, input) {
     session.userData.diceDelta = delta;
 }
 
+function ValidateDice(session) {
+    var msg;
+    if (CheckDice(session.userData)) {
+        Roll(session, function () {
+            session.beginDialog('/roll');
+        });
+    } else {
+        if (session.userData.diceNumber === 13) {
+            session.send("#lemmings16 is awesome!");
+            session.userData.diceNumber = 0;
+            session.replaceDialog('/start', { reprompt: true });
+        } else if (session.userData.diceNumber === 0) {
+            if (session.userData.diceCount > 0 || session.userData.diceDelta > 0) {
+                msg = "It seems you forgot to specify the dice :)";
+            } else if (session.userData.diceName) {
+                msg = "Sorry " + GetUserName(session) + ", I can't roll the dice " + session.userData.diceName + ".";
+            } else {
+                msg = "Sorry " + GetUserName(session) + ", that's not a dice I know about. Try a different one..";
+            }
+            session.send(msg);
+            session.replaceDialog('/start', { reprompt: true });
+        } else if (session.userData.diceCount === 0) {
+            msg = "You can't roll 0 dice!";
+            session.send(msg);
+            session.replaceDialog('/start', { reprompt: true });
+        } else if (session.userData.diceNumber > 0) {
+            msg = "Do you mean dice D" + session.userData.diceNumber.toString() + "?";
+            builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(session, msg) });
+            Roll(session, function () {
+                session.beginDialog('/roll');
+            });
+        }
+    }
+}
+
 function Roll(session, next) {
     if (session.userData.diceCount === 1) {
         var n = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
@@ -148,7 +161,13 @@ function Roll(session, next) {
         var names = [];
         for (var i = 1; i <= session.userData.diceCount; i++) {
             var number = Random(1, session.userData.diceNumber) + session.userData.diceDelta;
-            names.push(i + ": " + number.toString());
+            var name = i + ": " + number.toString();
+            if (number === 1) {
+                name = name + " Critical fail!";
+            } else if (number === session.userData.diceNumber) {
+                name = name + " Critical hit!";
+            }
+            names.push(name);
         }
         session.send(names.join("  \n"));
     }
@@ -165,12 +184,12 @@ function GetUserName(session) {
 
 function GetRetryPrompt(session, msg) {
     return [
-        "Sorry " + GetUserName(session) + ", I don't understand...\n\n" + msg,
-        "You are too fast for me! I didn't get that.\n\n" + msg];
+        "Sorry " + GetUserName(session) + ", I didn't get it...\n\n" + msg,
+        "You are way too fast for me! I didn't get that.\n\n" + msg];
 }
 
 bot.use({
-    botbuilder: (session, next) => {
+    botbuilder: function (session, next) {
         var last = session.conversationData.lastSendTime;
         var now = Date.now();
         var diff = moment.duration(now - last).asHours();
