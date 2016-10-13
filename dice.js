@@ -72,9 +72,9 @@ function EasterEgg(session) {
     session.userData.diceNumber = 0;
     var card = new builder.HeroCard(session)
         .title("Lemmings I/O")
-        .subtitle("#lemmings16")
+        .subtitle("This chatbot was produced by three Lemmings: Eva, Tanya and Vaida. Lemmings is an organization of creative, tech savvy and very curious people. If you hear of us for the first time, it will definitely not be the last one.")
         .tap(builder.CardAction.openUrl(session, "https://lemmings.io/"))
-        .buttons([builder.CardAction.openUrl(session, "https://www.facebook.com/lemmings.io", 'Join now!')])
+        .buttons([builder.CardAction.openUrl(session, "https://www.facebook.com/lemmings.io", 'Join community now!')])
         .images([builder.CardImage.create(session, "http://www.evalettner.com/images/projects/lemmings/lemmings.png")]);
     var reply = new builder.Message(session)
         .attachmentLayout(builder.AttachmentLayout.carousel)
@@ -215,17 +215,21 @@ function ValidateDice(session) {
 
 function Roll(session, next) {
     var names = [];
-    if (session.userData.diceCount === 1) {
-        var n = GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
-        names.push(n);
+    if (session.userData.diceNumber === 6 && session.userData.diceDelta === 0) {
+        Roll6(session);
     } else {
-        for (var i = 1; i <= session.userData.diceCount; i++) {
-            var name = i + ": " + GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
-            names.push(name);
+        if (session.userData.diceCount === 1) {
+            var n = GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
+            names.push(n);
+        } else {
+            for (var i = 1; i <= session.userData.diceCount; i++) {
+                var name = i + ": " + GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
+                names.push(name);
+            }
         }
+        var msg = GetQuote() + "  \n\n" + names.join("  \n");
+        session.send(msg);
     }
-    var msg = GetQuote() + "  \n\n" + names.join("  \n");
-    session.send(msg);
     next();
 }
 
@@ -240,6 +244,39 @@ function GenerateNumber(max, delta) {
         }
     }
     return name;
+}
+
+function Roll6(session) {
+    var attachments = [];
+    for (var i = 1; i <= session.userData.diceCount; i++) {
+        var number = Random(1, 6);
+        var link = "http://www.evalettner.com/images/projects/lemmings/" + Humanize6(number) + ".png";
+        var card = new builder.ThumbnailCard(session)
+            .title(i.toString() + ":")
+            .images([builder.CardImage.create(session, link)]);
+        attachments.push(card);
+    }
+    var reply = new builder.Message(session).attachments(attachments);
+    session.send(reply);
+}
+
+function Humanize6(number) {
+    switch (number) {
+        case 1:
+            return "one";
+        case 2:
+            return "two";
+        case 3:
+            return "three";
+        case 4:
+            return "four";
+        case 5:
+            return "five";
+        case 6:
+            return "six";
+        default:
+            return "six";
+    }
 }
 
 function GetQuote() {
