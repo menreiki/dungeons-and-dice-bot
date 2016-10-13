@@ -131,7 +131,7 @@ function ValidateDice(session) {
             session.userData.diceNumber = 0;
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber === 0) {
-            if (session.userData.diceCount > 0 || session.userData.diceDelta > 0) {
+            if (session.userData.diceCount > 1 || session.userData.diceDelta > 0) {
                 msg = "It seems you forgot to specify the dice :p";
             } else if (session.userData.diceName) {
                 msg = "Sorry " + session.userData.name + ", I can't roll the dice " + session.userData.diceName + " (think)";
