@@ -250,7 +250,7 @@ function Roll6(session) {
     var attachments = [];
     var card = null;
     if (session.userData.diceCount === 1) {
-        card = GenerateCard6(session);
+        card = GenerateCard6(session,"");
         attachments.push(card);
     } else {
         for (var i = 1; i <= session.userData.diceCount; i++) {
