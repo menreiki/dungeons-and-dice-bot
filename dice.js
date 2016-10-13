@@ -188,7 +188,7 @@ function GetQuote() {
         "What do the dice say..",
         "Don't roll the dice if you can't pay the price.",
         "Dice say nothing. They are dice.",
-        "I will roll the dice and take delight in my suffering.",
+        "I will roll the dice and take delight in your suffering.",
         "God does not play dice.",
         "The dice of Zeus always fall luckily.",
         "One who doesn't throw the dice can never expect to score a six.",
