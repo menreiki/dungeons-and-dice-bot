@@ -248,14 +248,16 @@ function GenerateNumber(max, delta) {
 
 function Roll6(session) {
     var attachments = [];
-    var card = null;
     if (session.userData.diceCount === 1) {
-        card = GenerateCard6(session);
-        attachments.push(card);
+        var attachment = new builder.CardImage().Url = "http://www.evalettner.com/images/projects/lemmings/" + Humanize6(Random(1, 6)) + ".png";
+        attachments.push(attachment);
     } else {
         for (var i = 1; i <= session.userData.diceCount; i++) {
-            card = GenerateCard6(session);
-            card.title(i.toString() + ":")
+            var number = Random(1, 6);
+            var link = "http://www.evalettner.com/images/projects/lemmings/" + Humanize6(number) + ".png";
+            var card = new builder.ThumbnailCard(session)
+                .title(i.toString() + ":")
+                .images([builder.CardImage.create(session, link)]);
             attachments.push(card);
         }
     }
@@ -263,13 +265,6 @@ function Roll6(session) {
         .attachmentLayout(builder.AttachmentLayout.carousel)
         .attachments(attachments);
     session.send(reply);
-}
-
-function GenerateCard6(session) {
-    var number = Random(1, 6);
-    var link = "http://www.evalettner.com/images/projects/lemmings/" + Humanize6(number) + ".png";
-    var card = new builder.ThumbnailCard(session).images([builder.CardImage.create(session, link)]);
-    return card;
 }
 
 function Humanize6(number) {
