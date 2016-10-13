@@ -77,7 +77,7 @@ function ParseDice(session, input) {
     var number = 0;
     var delta = 0;
     var name = null;
-    input = input.toUpperCase();
+    input = input.replace(/\s+/g, '').toUpperCase();
     var names = input.match(/D\d+/i);
     if (names) {
         name = names[0];
