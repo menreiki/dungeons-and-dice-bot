@@ -255,7 +255,8 @@ function Roll6(session) {
     } else {
         for (var i = 1; i <= session.userData.diceCount; i++) {
             card = GenerateCard6(session);
-            card.title = i.toString() + ": " + card.title;
+            var name = i.toString() + ": " + card.title;
+            card.title(name);
             attachments.push(card);
         }
     }
