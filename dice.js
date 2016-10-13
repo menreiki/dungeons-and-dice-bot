@@ -50,7 +50,7 @@ bot.dialog('/roll', [
         if (session.userData.diceNumber === 0) {
             session.beginDialog('/start');
         }
-        var msg = "What do you want to do next?";
+        var msg = "What would you like to do?";
         builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Change the dice", "I'm good"], { retryPrompt: GetRetryPrompt(session.message.user.name, msg) });
     },
     function (session, results) {
