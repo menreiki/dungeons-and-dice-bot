@@ -15,8 +15,7 @@ var bot = new builder.UniversalBot(connector, { persistConversationData: true })
 server.post('/api/messages', connector.listen());
 
 bot.dialog('/', function (session) {
-    session.userData.name = session.message.user.name.match(/([^\s]+)/i)[0];
-    session.send("Hi " + session.userData.name + ", I am a Dungeons and Dice bot. (hi)");
+    session.send("Hi " + GetUserName(session.message.user.name) + ", I am a Dungeons and Dice bot. (hi)");
     session.conversationData.lastSendTime = session.lastSendTime;
     if (CheckDice(session.userData)) {
         session.beginDialog('/roll');
@@ -52,7 +51,7 @@ bot.dialog('/roll', [
             session.beginDialog('/start');
         }
         var msg = "What do you want to do next?";
-        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Change the dice", "I'm good"], { retryPrompt: GetRetryPrompt(session, msg) });
+        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Change the dice", "I'm good"], { retryPrompt: GetRetryPrompt(session.message.user.name, msg) });
     },
     function (session, results) {
         if (results.response.entity === "Roll " + session.userData.diceName) {
@@ -134,9 +133,9 @@ function ValidateDice(session) {
             if (session.userData.diceCount > 1 || session.userData.diceDelta > 0) {
                 msg = "It seems you forgot to specify the dice :p";
             } else if (session.userData.diceName) {
-                msg = "Sorry " + session.userData.name + ", I can't roll the dice " + session.userData.diceName + " (think)";
+                msg = session.userData.diceName + "?! Are you sure? (think)";
             } else {
-                msg = "Sorry " + session.userData.name + ", that's not a dice I know about :$ Try a different one..";
+                msg = "Sorry " + GetUserName(session.message.user.name) + ", that's not a dice I know about :$ Try a different one..";
             }
             session.send(msg);
             session.replaceDialog('/start', { reprompt: true });
@@ -146,7 +145,7 @@ function ValidateDice(session) {
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber > 0) {
             msg = "Do you mean dice D" + session.userData.diceNumber.toString() + "? (wait)";
-            builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(session, msg) });
+            builder.Prompts.confirm(session, msg, { retryPrompt: GetRetryPrompt(session.message.user.name, msg) });
             Roll(session, function () {
                 session.beginDialog('/roll');
             });
@@ -201,13 +200,17 @@ function GetQuote() {
     return quotes[Random(0, quotes.length - 1)];
 }
 
+function GetUserName(fullName) {
+    return fullName.match(/([^\s]+)/i)[0]
+}
+
 function Random(low, high) {
     return Math.floor(Math.random() * (high - low + 1) + low);
 }
 
-function GetRetryPrompt(session, msg) {
+function GetRetryPrompt(name, msg) {
     return [
-        "Sorry " + session.userData.name + ", I didn't get it. Please choose one of the following options.  \n\n" + msg,
+        "Sorry " + name + ", I didn't get it. Please choose one of the following options.  \n\n" + msg,
         "You are way too fast for me! I didn't get that.  \n\n" + msg];
 }
 
