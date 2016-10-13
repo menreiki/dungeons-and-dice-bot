@@ -52,7 +52,7 @@ bot.dialog('/roll', [
         }
         var msg = "What is your next action, " + GetUserName(session.message.user.name) + "?";
         var name = GetUserName(session.message.user.name);
-        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Switch the dice", "Leave a dungeon"], { retryPrompt: GetRetryPrompt(name, msg) });
+        builder.Prompts.choice(session, msg, ["Roll " + session.userData.diceName, "Switch the dice", "Leave the dungeon"], { retryPrompt: GetRetryPrompt(name, msg) });
     },
     function (session, results) {
         if (results.response.entity === "Roll " + session.userData.diceName) {
@@ -67,6 +67,19 @@ bot.dialog('/roll', [
         }
     }
 ]);
+
+function EasterEgg(session) {
+    var card = new builder.HeroCard(session)
+        .title("Lemmings I/O")
+        .subtitle("#lemmings16")
+        .tap(builder.CardAction.openUrl(session, "https://lemmings.io/"))
+        .buttons([builder.CardAction.openUrl(session, "https://www.facebook.com/lemmings.io", 'Join now!')])
+        .images([builder.CardImage.create(session, "http://www.evalettner.com/images/projects/lemmings/lemmings.png")]);
+    var reply = new builder.Message(session)
+        .attachmentLayout(builder.AttachmentLayout.carousel)
+        .attachments([card]);
+    session.send(reply);
+}
 
 function CheckDice(userData) {
     return userData.diceName && userData.diceCount && userData.diceCount > 0 && userData.diceNumber && userData.diceNumber > 0 && userData.diceNumber !== 13;
@@ -141,7 +154,7 @@ function ValidateDice(session) {
         });
     } else {
         if (session.userData.diceNumber === 13) {
-            session.send("#lemmings16 is awesome!");
+            EasterEgg(session);
             session.userData.diceNumber = 0;
             session.replaceDialog('/start', { reprompt: true });
         } else if (session.userData.diceNumber === 0) {
