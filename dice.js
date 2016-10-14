@@ -213,7 +213,8 @@ function ValidateDice(session) {
     }
 }
 
-function Roll(session, next) {   
+function Roll(session, next) {  
+    var names = [];
     if (session.userData.diceCount === 1) {
         var n = GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
         names.push(n);
