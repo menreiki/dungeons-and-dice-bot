@@ -213,23 +213,18 @@ function ValidateDice(session) {
     }
 }
 
-function Roll(session, next) {
-    var names = [];
-    if (session.userData.diceNumber === 6 && session.userData.diceDelta === 0) {
-        Roll6(session);
+function Roll(session, next) {   
+    if (session.userData.diceCount === 1) {
+        var n = GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
+        names.push(n);
     } else {
-        if (session.userData.diceCount === 1) {
-            var n = GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
-            names.push(n);
-        } else {
-            for (var i = 1; i <= session.userData.diceCount; i++) {
-                var name = i + ": " + GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
-                names.push(name);
-            }
+        for (var i = 1; i <= session.userData.diceCount; i++) {
+            var name = i + ": " + GenerateNumber(session.userData.diceNumber, session.userData.diceDelta);
+            names.push(name);
         }
-        var msg = GetQuote() + "  \n\n" + names.join("  \n");
-        session.send(msg);
     }
+    var msg = GetQuote() + "  \n\n" + names.join("  \n");
+    session.send(msg);
     next();
 }
 
